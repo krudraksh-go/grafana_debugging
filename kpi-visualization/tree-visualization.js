@@ -9,19 +9,19 @@
     // =============================================
     const CONFIG = {
         nodeRadius: {
-            dashboard: 10,
-            kpi: 8,
-            metric: 7,
-            derived: 7,
-            root: 7,
-            calculation: 6,
-            external: 6,
-            column: 5,
-            root_column: 5,
-            tag: 4,
-            external_table: 5,
-            external_column: 5,
-            note: 4
+            dashboard: 20,
+            kpi: 16,
+            metric: 14,
+            derived: 14,
+            root: 14,
+            calculation: 12,
+            external: 12,
+            column: 10,
+            root_column: 8,
+            tag: 8,
+            external_table: 10,
+            external_column: 8,
+            note: 6
         },
         spacing: {
             horizontal: 280,
@@ -503,7 +503,7 @@
             .attr('transform', `translate(${source.y0 || 0},${source.x0 || 0})`)
             .style('opacity', 0);
 
-        // Small status indicator circle
+        // Add circles
         nodeEnter.append('circle')
             .attr('r', d => getNodeRadius(d.data.type))
             .attr('fill', d => getNodeColor(d.data.type, d.data))
@@ -518,66 +518,68 @@
             .on('mousemove', moveTooltip)
             .on('mouseout', hideTooltip);
 
-        // Expand/collapse indicator (only if has children)
-        nodeEnter.filter(d => d.children || d._children)
-            .append('text')
+        // Add expand/collapse indicator
+        nodeEnter.append('text')
             .attr('class', 'expand-indicator')
             .attr('dy', '0.35em')
             .attr('text-anchor', 'middle')
-            .attr('font-size', 8)
+            .attr('font-size', d => Math.max(8, getNodeRadius(d.data.type) * 0.8))
             .attr('fill', '#fff')
             .attr('pointer-events', 'none')
-            .text(d => d._children ? '+' : '−');
+            .text(d => d._children ? '+' : (d.children ? '−' : ''));
 
-        // VALUE - Large and prominent (for nodes with health data)
+        // Add labels
+        nodeEnter.append('text')
+            .attr('class', 'label-primary')
+            .attr('dy', '0.35em')
+            .attr('x', d => getNodeRadius(d.data.type) + 8)
+            .attr('text-anchor', 'start')
+            .attr('fill', '#2d3748')
+            .attr('font-size', d => d.depth === 0 ? 14 : (d.depth === 1 ? 12 : 11))
+            .attr('font-weight', d => d.depth <= 1 ? 600 : 500)
+            .text(d => truncateLabel(d.data.name, 28));
+
+        // Add value display for nodes with health data
         nodeEnter.filter(d => getNodeHealth(d.data.name))
             .append('text')
             .attr('class', 'label-value')
-            .attr('dy', '-0.3em')
-            .attr('x', d => getNodeRadius(d.data.type) + 12)
-            .attr('text-anchor', 'start')
+            .attr('dy', '0.35em')
+            .attr('x', d => -getNodeRadius(d.data.type) - 8)
+            .attr('text-anchor', 'end')
             .attr('fill', d => {
                 const health = getNodeHealth(d.data.name);
-                return health ? HEALTH_COLORS[health.status] : '#2d3748';
+                return health ? HEALTH_COLORS[health.status] : '#718096';
             })
-            .attr('font-size', 20)
+            .attr('font-size', 14)
             .attr('font-weight', 700)
             .attr('font-family', "'JetBrains Mono', monospace")
             .text(d => {
                 const health = getNodeHealth(d.data.name);
-                const threshold = getNodeThreshold(d.data.name);
-                if (health && threshold) {
-                    return `${health.value} ${threshold.unit}`;
-                }
                 return health ? health.value : '';
             });
 
-        // KPI NAME - Clear and readable
-        nodeEnter.append('text')
-            .attr('class', 'label-primary')
-            .attr('dy', d => getNodeHealth(d.data.name) ? '1.1em' : '0.35em')
-            .attr('x', d => getNodeRadius(d.data.type) + 12)
-            .attr('text-anchor', 'start')
-            .attr('fill', '#2d3748')
-            .attr('font-size', 13)
-            .attr('font-weight', 600)
-            .text(d => truncateLabel(d.data.name, 30));
+        // Add unit display for nodes with health data
+        nodeEnter.filter(d => getNodeHealth(d.data.name) && getNodeThreshold(d.data.name))
+            .append('text')
+            .attr('class', 'label-unit')
+            .attr('dy', '1.5em')
+            .attr('x', d => -getNodeRadius(d.data.type) - 8)
+            .attr('text-anchor', 'end')
+            .attr('fill', '#718096')
+            .attr('font-size', 8)
+            .text(d => {
+                const threshold = getNodeThreshold(d.data.name);
+                return threshold ? threshold.unit : '';
+            });
 
-        // Secondary info - deviation or DB info
+        // Add type badge
         nodeEnter.append('text')
             .attr('class', 'label-secondary')
-            .attr('dy', d => getNodeHealth(d.data.name) ? '2.3em' : '1.6em')
-            .attr('x', d => getNodeRadius(d.data.type) + 12)
+            .attr('dy', '1.7em')
+            .attr('x', d => getNodeRadius(d.data.type) + 8)
             .attr('text-anchor', 'start')
-            .attr('fill', d => {
-                const health = getNodeHealth(d.data.name);
-                if (health) {
-                    return health.status === 'critical' ? '#b85450' : 
-                           (health.status === 'warning' ? '#c4824a' : '#48a999');
-                }
-                return '#718096';
-            })
-            .attr('font-size', 10)
+            .attr('fill', '#718096')
+            .attr('font-size', 9)
             .text(d => getSecondaryLabel(d.data));
 
         // Add verification badge
@@ -623,18 +625,11 @@
 
         nodeUpdate.select('circle')
             .attr('r', d => getNodeRadius(d.data.type))
-            .attr('fill', d => isNodeHighlighted(d) ? d3.color(getNodeColor(d.data.type, d.data)).brighter(0.3) : getNodeColor(d.data.type, d.data))
-            .attr('stroke-width', d => isNodeInActivePath(d.data.name) ? 2.5 : 1.5);
+            .attr('fill', d => isNodeHighlighted(d) ? d3.color(getNodeColor(d.data.type, d.data)).brighter(0.5) : getNodeColor(d.data.type, d.data))
+            .attr('stroke-width', d => isNodeInActivePath(d.data.name) ? 4 : 3);
 
         nodeUpdate.select('.expand-indicator')
             .text(d => d._children ? '+' : (d.children ? '−' : ''));
-        
-        // Update value colors for highlighted nodes
-        nodeUpdate.select('.label-value')
-            .attr('fill', d => {
-                const health = getNodeHealth(d.data.name);
-                return health ? HEALTH_COLORS[health.status] : '#2d3748';
-            });
 
         // Exit
         node.exit()

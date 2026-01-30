@@ -44,6 +44,8 @@
     let visibleTypes = new Set(['kpi', 'metric', 'derived', 'root', 'column', 'external', 'calculation', 'root_column', 'tag', 'external_table', 'external_column', 'note', 'dashboard']);
     let searchTerm = '';
     let nodeIdCounter = 0;
+    let activeCriticalPath = null;
+    let healthFilterStatus = null;
 
     // =============================================
     // Initialization
@@ -67,6 +69,9 @@
         // Setup minimap
         setupMinimap();
         
+        // Setup health monitoring
+        setupHealthMonitoring();
+        
         // Hide loading overlay
         setTimeout(() => {
             document.getElementById('loading').classList.add('hidden');
@@ -74,6 +79,209 @@
         
         // Center the view
         setTimeout(centerView, 600);
+    }
+    
+    // =============================================
+    // Health Monitoring Setup
+    // =============================================
+    function setupHealthMonitoring() {
+        // Update health counts
+        updateHealthCounts();
+        
+        // Populate critical paths list
+        populateCriticalPaths();
+        
+        // Setup health filter click handlers
+        document.querySelectorAll('.health-filter').forEach(item => {
+            item.addEventListener('click', () => {
+                const status = item.dataset.health;
+                if (healthFilterStatus === status) {
+                    healthFilterStatus = null;
+                    item.classList.remove('active');
+                } else {
+                    document.querySelectorAll('.health-filter').forEach(i => i.classList.remove('active'));
+                    healthFilterStatus = status;
+                    item.classList.add('active');
+                    expandToHealthStatus(status);
+                }
+                update(root);
+            });
+        });
+    }
+    
+    function updateHealthCounts() {
+        const summary = getHealthSummary();
+        document.getElementById('count-critical').textContent = summary.critical;
+        document.getElementById('count-warning').textContent = summary.warning;
+        document.getElementById('count-healthy').textContent = summary.healthy;
+    }
+    
+    function populateCriticalPaths() {
+        const container = document.getElementById('critical-paths-list');
+        if (!container) return;
+        
+        let html = '';
+        CRITICAL_PATHS.forEach(path => {
+            const severityClass = path.severity === 'warning' ? 'warning' : '';
+            html += `
+                <div class="critical-path-card ${severityClass}" data-path-id="${path.id}">
+                    <div class="critical-path-title">
+                        <span>${path.severity === 'critical' ? '🔴' : '🟡'}</span>
+                        ${path.title}
+                    </div>
+                    <div class="critical-path-desc">${path.description}</div>
+                    <div class="critical-path-chain">
+                        ${path.path.slice(0, 4).map((node, i) => `
+                            <span class="chain-node ${severityClass}">${truncateLabel(node, 12)}</span>
+                            ${i < 3 ? '<span class="chain-arrow">→</span>' : ''}
+                        `).join('')}
+                        ${path.path.length > 4 ? '<span class="chain-arrow">→ ...</span>' : ''}
+                    </div>
+                    <div class="critical-path-impact ${severityClass}">
+                        <span class="impact-label ${severityClass}">Impact:</span> ${path.impact}
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+        
+        // Add click handlers for critical path cards
+        container.querySelectorAll('.critical-path-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const pathId = parseInt(card.dataset.pathId);
+                selectCriticalPath(pathId);
+            });
+        });
+    }
+    
+    function selectCriticalPath(pathId) {
+        const path = CRITICAL_PATHS.find(p => p.id === pathId);
+        if (!path) return;
+        
+        // Toggle active state
+        if (activeCriticalPath === pathId) {
+            activeCriticalPath = null;
+            document.querySelectorAll('.critical-path-card').forEach(c => c.classList.remove('active'));
+        } else {
+            activeCriticalPath = pathId;
+            document.querySelectorAll('.critical-path-card').forEach(c => {
+                c.classList.toggle('active', parseInt(c.dataset.pathId) === pathId);
+            });
+            
+            // Expand nodes in the path
+            expandCriticalPath(path.path);
+            
+            // Show path details in the details panel
+            showCriticalPathDetails(path);
+        }
+        
+        update(root);
+    }
+    
+    function expandCriticalPath(pathNames) {
+        // First expand all nodes in the path
+        root.descendants().forEach(d => {
+            if (pathNames.includes(d.data.name)) {
+                // Expand this node and all ancestors
+                let current = d;
+                while (current) {
+                    if (current._children) {
+                        current.children = current._children;
+                        current._children = null;
+                    }
+                    current = current.parent;
+                }
+            }
+        });
+        
+        // Pan to the first node in path
+        const firstNode = findNodeByName(pathNames[0]);
+        if (firstNode) {
+            setTimeout(() => panToNode(firstNode), 300);
+        }
+    }
+    
+    function expandToHealthStatus(status) {
+        root.descendants().forEach(d => {
+            const health = getNodeHealth(d.data.name);
+            if (health && health.status === status) {
+                let current = d;
+                while (current) {
+                    if (current._children) {
+                        current.children = current._children;
+                        current._children = null;
+                    }
+                    current = current.parent;
+                }
+            }
+        });
+    }
+    
+    function showCriticalPathDetails(path) {
+        const panel = document.getElementById('details-panel');
+        
+        const severityColor = path.severity === 'critical' ? '#dc2626' : '#f59e0b';
+        const severityBg = path.severity === 'critical' ? '#fef2f2' : '#fffbeb';
+        
+        let pathHTML = path.path.map((node, i) => {
+            const health = getNodeHealth(node);
+            const statusClass = health ? health.status : '';
+            return `
+                <div style="display: flex; align-items: center; gap: 8px; padding: 6px 0; ${i > 0 ? 'border-top: 1px dashed #e5e7eb;' : ''}">
+                    <span style="color: ${severityColor};">${i === path.path.length - 1 ? '🎯' : '↓'}</span>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">${node}</span>
+                    ${health ? `<span class="health-badge ${statusClass}">${health.value}</span>` : ''}
+                </div>
+            `;
+        }).join('');
+        
+        let detailsHTML = `
+            <div class="details-header" style="background: ${severityBg};">
+                <div class="details-title">
+                    <span style="font-size: 18px;">${path.severity === 'critical' ? '🔴' : '🟡'}</span>
+                    ${path.title}
+                </div>
+            </div>
+            <div class="details-content">
+                <div class="detail-row">
+                    <span class="detail-label">Severity</span>
+                    <span class="health-badge ${path.severity}">${path.severity.toUpperCase()}</span>
+                </div>
+                <div class="detail-row" style="flex-direction: column;">
+                    <span class="detail-label" style="margin-bottom: 8px;">Issue Chain (${path.path.length} nodes)</span>
+                    <div style="background: ${severityBg}; border-radius: 8px; padding: 12px; border: 1px solid ${severityColor}20;">
+                        ${pathHTML}
+                    </div>
+                </div>
+                <div class="detail-row" style="flex-direction: column; margin-top: 12px;">
+                    <span class="detail-label">Root Cause</span>
+                    <span class="detail-value" style="color: ${severityColor}; font-weight: 600;">${path.rootCause}</span>
+                </div>
+                <div class="detail-row" style="flex-direction: column; margin-top: 8px;">
+                    <span class="detail-label">Impact</span>
+                    <span class="detail-value">${path.impact}</span>
+                </div>
+                <div class="detail-row" style="flex-direction: column; margin-top: 8px;">
+                    <span class="detail-label">Recommendation</span>
+                    <span class="detail-value" style="color: #059669;">${path.recommendation}</span>
+                </div>
+            </div>
+        `;
+        
+        panel.innerHTML = detailsHTML;
+    }
+    
+    function isNodeInActivePath(nodeName) {
+        if (!activeCriticalPath) return false;
+        const path = CRITICAL_PATHS.find(p => p.id === activeCriticalPath);
+        return path && path.path.includes(nodeName);
+    }
+    
+    function getActivePathSeverity() {
+        if (!activeCriticalPath) return null;
+        const path = CRITICAL_PATHS.find(p => p.id === activeCriticalPath);
+        return path ? path.severity : null;
     }
 
     function assignIds(node, depth = 0) {
@@ -199,7 +407,18 @@
         // Enter new nodes
         const nodeEnter = node.enter()
             .append('g')
-            .attr('class', d => `node node-${d.data.type}`)
+            .attr('class', d => {
+                let classes = `node node-${d.data.type}`;
+                if (isNodeInActivePath(d.data.name)) {
+                    const severity = getActivePathSeverity();
+                    classes += severity === 'critical' ? ' critical-node' : ' warning-node';
+                }
+                const health = getNodeHealth(d.data.name);
+                if (health && health.status === 'critical') {
+                    classes += ' health-pulse';
+                }
+                return classes;
+            })
             .attr('transform', `translate(${source.y0 || 0},${source.x0 || 0})`)
             .style('opacity', 0);
 
@@ -234,19 +453,19 @@
             .attr('dy', '0.35em')
             .attr('x', d => getNodeRadius(d.data.type) + 8)
             .attr('text-anchor', 'start')
-            .attr('fill', '#1e293b')
-            .attr('font-size', d => d.depth === 0 ? 16 : (d.depth === 1 ? 14 : 12))
-            .attr('font-weight', d => d.depth <= 1 ? 600 : 400)
-            .text(d => truncateLabel(d.data.name, 35));
+            .attr('fill', '#2d3748')
+            .attr('font-size', d => d.depth === 0 ? 14 : (d.depth === 1 ? 12 : 11))
+            .attr('font-weight', d => d.depth <= 1 ? 600 : 500)
+            .text(d => truncateLabel(d.data.name, 32));
 
         // Add type badge
         nodeEnter.append('text')
             .attr('class', 'label-secondary')
-            .attr('dy', '1.8em')
+            .attr('dy', '1.7em')
             .attr('x', d => getNodeRadius(d.data.type) + 8)
             .attr('text-anchor', 'start')
-            .attr('fill', '#64748b')
-            .attr('font-size', 10)
+            .attr('fill', '#718096')
+            .attr('font-size', 9)
             .text(d => getTypeLabel(d.data));
 
         // Add verification badge
@@ -272,14 +491,28 @@
         // Update
         const nodeUpdate = nodeEnter.merge(node);
 
-        nodeUpdate.transition()
+        nodeUpdate
+            .attr('class', d => {
+                let classes = `node node-${d.data.type}`;
+                if (isNodeInActivePath(d.data.name)) {
+                    const severity = getActivePathSeverity();
+                    classes += severity === 'critical' ? ' critical-node' : ' warning-node';
+                }
+                const health = getNodeHealth(d.data.name);
+                if (health && health.status === 'critical') {
+                    classes += ' health-pulse';
+                }
+                return classes;
+            })
+            .transition()
             .duration(CONFIG.animation.duration)
             .attr('transform', d => `translate(${d.y},${d.x})`)
             .style('opacity', d => isNodeVisible(d) ? 1 : 0.2);
 
         nodeUpdate.select('circle')
             .attr('r', d => getNodeRadius(d.data.type))
-            .attr('fill', d => isNodeHighlighted(d) ? d3.color(getNodeColor(d.data.type, d.data)).brighter(0.5) : getNodeColor(d.data.type, d.data));
+            .attr('fill', d => isNodeHighlighted(d) ? d3.color(getNodeColor(d.data.type, d.data)).brighter(0.5) : getNodeColor(d.data.type, d.data))
+            .attr('stroke-width', d => isNodeInActivePath(d.data.name) ? 4 : 3);
 
         nodeUpdate.select('.expand-indicator')
             .text(d => d._children ? '+' : (d.children ? '−' : ''));
@@ -313,11 +546,30 @@
         // Update
         const linkUpdate = linkEnter.merge(link);
 
-        linkUpdate.transition()
+        linkUpdate
+            .attr('class', d => {
+                let classes = 'link';
+                if (isNodeInActivePath(d.source.data.name) && isNodeInActivePath(d.target.data.name)) {
+                    const severity = getActivePathSeverity();
+                    classes += severity === 'critical' ? ' critical-path' : ' warning-path';
+                }
+                return classes;
+            })
+            .transition()
             .duration(CONFIG.animation.duration)
             .attr('d', d => diagonal(d.source, d.target))
-            .attr('stroke', d => isLinkHighlighted(d) ? '#3b82f6' : '#334155')
-            .attr('stroke-width', d => isLinkHighlighted(d) ? 2 : 1.5)
+            .attr('stroke', d => {
+                if (isNodeInActivePath(d.source.data.name) && isNodeInActivePath(d.target.data.name)) {
+                    return getActivePathSeverity() === 'critical' ? '#b85450' : '#c4824a';
+                }
+                return isLinkHighlighted(d) ? '#4a6fa5' : '#c4c9cf';
+            })
+            .attr('stroke-width', d => {
+                if (isNodeInActivePath(d.source.data.name) && isNodeInActivePath(d.target.data.name)) {
+                    return 3;
+                }
+                return isLinkHighlighted(d) ? 2 : 1.5;
+            })
             .style('opacity', d => isNodeVisible(d.source) && isNodeVisible(d.target) ? 0.6 : 0.1);
 
         // Exit
@@ -357,6 +609,16 @@
     }
 
     function getNodeColor(type, data) {
+        // Check health status first
+        if (data && data.name) {
+            const health = getNodeHealth(data.name);
+            if (health) {
+                if (health.status === 'critical') return HEALTH_COLORS.critical;
+                if (health.status === 'warning') return HEALTH_COLORS.warning;
+                if (health.status === 'healthy') return HEALTH_COLORS.healthy;
+            }
+        }
+        
         // If dbNotFound, use orange color
         if (data && data.dbNotFound) {
             return '#d97706';
@@ -369,6 +631,20 @@
     }
 
     function getTypeLabel(data) {
+        // Check health status first and show value
+        if (data && data.name) {
+            const health = getNodeHealth(data.name);
+            const threshold = getNodeThreshold(data.name);
+            if (health && threshold) {
+                const trendIcon = health.trend === 'up' ? '↑' : (health.trend === 'down' ? '↓' : '→');
+                const statusIcon = health.status === 'critical' ? '🔴' : (health.status === 'warning' ? '🟡' : '🟢');
+                return `${statusIcon} ${health.value} ${threshold.unit} ${trendIcon}`;
+            } else if (health) {
+                const statusIcon = health.status === 'critical' ? '🔴' : (health.status === 'warning' ? '🟡' : '🟢');
+                return `${statusIcon} ${health.status.toUpperCase()}`;
+            }
+        }
+        
         // Show DB NOT FOUND badge
         if (data.dbNotFound) return '⚠️ DB NOT FOUND';
         // Show database name if available
@@ -428,6 +704,26 @@
         const panel = document.getElementById('details-panel');
         
         const typeConfig = NODE_TYPES[d.data.type] || { icon: '📄', label: 'Node', color: '#64748b' };
+        const health = getNodeHealth(d.data.name);
+        const threshold = getNodeThreshold(d.data.name);
+        
+        // Determine header color based on health
+        let headerBg = '#f0fdf4';
+        let headerIcon = typeConfig.icon;
+        if (health) {
+            if (health.status === 'critical') {
+                headerBg = '#fef2f2';
+                headerIcon = '🔴';
+            } else if (health.status === 'warning') {
+                headerBg = '#fffbeb';
+                headerIcon = '🟡';
+            } else {
+                headerBg = '#f0fdf4';
+                headerIcon = '🟢';
+            }
+        } else if (d.data.dbNotFound) {
+            headerBg = '#fef3c7';
+        }
         
         // DB status badge
         const dbStatus = d.data.dbNotFound ? 
@@ -435,14 +731,70 @@
             (d.data.database ? '<span style="background: #059669; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">✓ DB MAPPED</span>' : '');
 
         let detailsHTML = `
-            <div class="details-header" style="background: ${d.data.dbNotFound ? '#fef3c7' : '#f0fdf4'};">
+            <div class="details-header" style="background: ${headerBg};">
                 <div class="details-title">
-                    <span style="font-size: 18px;">${typeConfig.icon}</span>
+                    <span style="font-size: 18px;">${headerIcon}</span>
                     ${d.data.name}
                 </div>
             </div>
             <div class="details-content">
-                <div class="detail-row">
+        `;
+        
+        // Health status section (if available)
+        if (health) {
+            const trendIcon = health.trend === 'up' ? '↑' : (health.trend === 'down' ? '↓' : '→');
+            const trendClass = health.trend === 'up' ? 'trend-up' : (health.trend === 'down' ? 'trend-down' : 'trend-stable');
+            const unit = threshold ? threshold.unit : '';
+            const target = threshold ? threshold.target : null;
+            
+            detailsHTML += `
+                <div class="health-details ${health.status}">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Current Value</span>
+                        <span class="health-badge ${health.status}">${health.status.toUpperCase()}</span>
+                    </div>
+                    <div style="display: flex; align-items: baseline; gap: 8px; margin-top: 8px;">
+                        <span class="health-value ${health.status}" style="font-size: 28px;">${health.value}</span>
+                        <span style="color: var(--text-muted); font-size: 14px;">${unit}</span>
+                        <span class="${trendClass}" style="font-size: 16px; margin-left: auto;">${trendIcon}</span>
+                    </div>
+                    ${target !== null ? `
+                        <div style="margin-top: 12px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                                <span>Target: ${target} ${unit}</span>
+                                <span>${Math.round((health.value / target) * 100)}%</span>
+                            </div>
+                            <div class="health-meter">
+                                <div class="health-meter-fill ${health.status}" style="width: ${Math.min(100, (health.value / target) * 100)}%;"></div>
+                            </div>
+                        </div>
+                    ` : ''}
+                    <div style="font-size: 10px; color: var(--text-muted); margin-top: 8px;">
+                        Updated: ${health.lastUpdated}
+                    </div>
+                </div>
+            `;
+            
+            // Show related critical paths
+            const relatedPaths = getCriticalPathsForNode(d.data.name);
+            if (relatedPaths.length > 0) {
+                detailsHTML += `
+                    <div style="margin-top: 12px; padding: 12px; background: #fef2f2; border-radius: 8px; border: 1px solid #fecaca;">
+                        <div style="font-size: 11px; text-transform: uppercase; color: #991b1b; font-weight: 600; margin-bottom: 8px;">
+                            ⚠️ Part of ${relatedPaths.length} Issue Chain(s)
+                        </div>
+                        ${relatedPaths.map(p => `
+                            <div style="font-size: 12px; color: #991b1b; cursor: pointer; padding: 4px 0;" onclick="document.querySelector('[data-path-id=\\'${p.id}\\']').click()">
+                                → ${p.title}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+        }
+        
+        detailsHTML += `
+                <div class="detail-row" style="margin-top: 12px;">
                     <span class="detail-label">Type</span>
                     <span class="detail-value type-badge" style="background: ${typeConfig.color}; color: white;">
                         ${typeConfig.label}
@@ -558,20 +910,58 @@ ${d.data.query}
     function showTooltip(event, d) {
         const tooltip = document.getElementById('tooltip');
         const typeConfig = NODE_TYPES[d.data.type] || { icon: '📄', label: 'Node', color: '#64748b' };
+        const health = getNodeHealth(d.data.name);
+        const threshold = getNodeThreshold(d.data.name);
         
-        // DB status indicator
-        const dbStatusColor = d.data.dbNotFound ? '#d97706' : (d.data.database ? '#059669' : typeConfig.color);
-        const dbStatusLabel = d.data.dbNotFound ? 'DB NOT FOUND' : (d.data.database ? 'DB MAPPED' : typeConfig.label);
+        // Determine status color
+        let statusColor = typeConfig.color;
+        let statusLabel = typeConfig.label;
+        
+        if (health) {
+            statusColor = HEALTH_COLORS[health.status] || statusColor;
+            const trendIcon = health.trend === 'up' ? '↑' : (health.trend === 'down' ? '↓' : '→');
+            statusLabel = `${health.status.toUpperCase()} ${trendIcon}`;
+        } else if (d.data.dbNotFound) {
+            statusColor = '#d97706';
+            statusLabel = 'DB NOT FOUND';
+        } else if (d.data.database) {
+            statusColor = '#059669';
+            statusLabel = 'DB MAPPED';
+        }
 
         let content = `
             <div class="tooltip-header">
-                <div class="tooltip-dot" style="background: ${dbStatusColor};"></div>
+                <div class="tooltip-dot" style="background: ${statusColor};"></div>
                 <span class="tooltip-title">${d.data.name}</span>
-                <span class="tooltip-type" style="background: ${dbStatusColor}; color: white;">
-                    ${dbStatusLabel}
+                <span class="tooltip-type" style="background: ${statusColor}; color: white;">
+                    ${statusLabel}
                 </span>
             </div>
         `;
+
+        // Show health value prominently if available
+        if (health && threshold) {
+            const trendIcon = health.trend === 'up' ? '↑' : (health.trend === 'down' ? '↓' : '→');
+            const trendColor = health.trend === 'up' ? '#dc2626' : (health.trend === 'down' ? '#10b981' : '#6b7280');
+            content += `
+                <div style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                        <span style="font-size: 24px; font-weight: 700; color: ${statusColor};">${health.value}</span>
+                        <span style="color: #6b7280; font-size: 12px;">${threshold.unit}</span>
+                        <span style="color: ${trendColor}; margin-left: auto;">${trendIcon}</span>
+                    </div>
+                    <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">
+                        Target: ${threshold.target} ${threshold.unit}
+                    </div>
+                </div>
+            `;
+        } else if (health) {
+            content += `
+                <div style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                    <span class="health-badge ${health.status}">${health.status.toUpperCase()}</span>
+                </div>
+            `;
+        }
 
         // Show database or formula info
         if (d.data.database) {
@@ -588,6 +978,7 @@ ${d.data.query}
         }
         if (d.data.sourceFile) tags.push(d.data.sourceFile);
         if (d.data.query) tags.push('Has Query');
+        if (health) tags.push(`Updated: ${health.lastUpdated}`);
 
         if (tags.length > 0) {
             content += `<div class="tooltip-meta">`;

@@ -722,31 +722,31 @@ const KPI_ARCHITECTURE_DATA = {
     ]
 };
 
-// Node type configurations - Updated for light theme
+// Node type configurations - Industrial Professional Theme
 const NODE_TYPES = {
     kpi: { 
-        color: "#2563eb",  // Industrial blue
-        icon: "📊", 
+        color: "#4a6fa5",  // Muted industrial blue
+        icon: "◆", 
         label: "KPI" 
     },
     metric: { 
-        color: "#059669",  // Green for DB-backed metrics
-        icon: "📈", 
+        color: "#48a999",  // Muted teal for DB-backed metrics
+        icon: "●", 
         label: "Metric (DB)" 
     },
     calculation: { 
-        color: "#7c3aed",  // Purple for calculations
-        icon: "🔢", 
+        color: "#6b5b95",  // Muted purple for calculations
+        icon: "○", 
         label: "Calculation" 
     },
     derived: { 
-        color: "#8b5cf6", 
-        icon: "⚙️", 
+        color: "#7a7a9d", 
+        icon: "◇", 
         label: "Derived" 
     },
     root: { 
-        color: "#059669", 
-        icon: "💾", 
+        color: "#48a999", 
+        icon: "■", 
         label: "Root Table" 
     }
 };

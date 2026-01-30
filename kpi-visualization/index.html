@@ -1195,82 +1195,6 @@
     <div class="main-container">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <div class="sidebar-section" style="background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%); padding: 20px; margin: -1px;">
-                <div class="sidebar-title" style="color: #a0aec0;">System Health Overview</div>
-                <div class="health-summary-grid" style="grid-template-columns: repeat(2, 1fr);">
-                    <div class="health-summary-card critical">
-                        <div class="health-summary-icon">⚠</div>
-                        <div class="health-summary-content">
-                            <div class="health-summary-value" id="summary-critical">4</div>
-                            <div class="health-summary-label">Critical</div>
-                        </div>
-                    </div>
-                    <div class="health-summary-card warning">
-                        <div class="health-summary-icon">!</div>
-                        <div class="health-summary-content">
-                            <div class="health-summary-value" id="summary-warning">3</div>
-                            <div class="health-summary-label">Warning</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="main-kpi-display">
-                    <div class="main-kpi-label">Current UPH</div>
-                    <div class="main-kpi-value critical" id="main-uph-value">85</div>
-                    <div class="main-kpi-target">Target: 150 units/hr</div>
-                    <div class="main-kpi-delta critical">▼ 43% below target</div>
-                </div>
-            </div>
-
-            <div class="sidebar-section">
-                <div class="sidebar-title">Key Metrics At Risk</div>
-                <div id="critical-kpis-list" class="critical-kpis-container">
-                    <!-- Will be populated by JS -->
-                </div>
-            </div>
-
-            <div class="sidebar-section">
-                <div class="sidebar-title" style="display: flex; align-items: center; gap: 8px;">
-                    <span style="color: #dc2626;">⚠️</span> Critical Issues
-                </div>
-                <div id="critical-paths-list" class="critical-paths-container">
-                    <!-- Critical paths will be populated by JS -->
-                </div>
-            </div>
-
-            <div class="sidebar-section">
-                <div class="sidebar-title">DB Status</div>
-                <div id="db-status-legend">
-                    <div class="legend-item" style="cursor: default;">
-                        <div class="legend-dot" style="background: #48a999;"></div>
-                        <span class="legend-label">DB Found</span>
-                        <span class="legend-count" style="background: #48a999; color: white;">28</span>
-                    </div>
-                    <div class="legend-item" style="cursor: default;">
-                        <div class="legend-dot" style="background: #c4824a;"></div>
-                        <span class="legend-label">DB Not Found</span>
-                        <span class="legend-count" style="background: #c4824a; color: white;">33+</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="sidebar-section">
-                <div class="sidebar-title">Quick Navigation (UPH.yaml)</div>
-                <div class="quick-links">
-                    <div class="quick-link" data-target="Picks per tote">Picks/Tote</div>
-                    <div class="quick-link" data-target="TPH all PPS">TPH all PPS</div>
-                    <div class="quick-link" data-target="Operator pull TPH">Operator TPH</div>
-                    <div class="quick-link" data-target="VTM TPH all VTMs">VTM TPH</div>
-                    <div class="quick-link" data-target="HTM TPH all HTMs">HTM TPH</div>
-                    <div class="quick-link" data-target="Effective VTMs">Effective VTMs</div>
-                    <div class="quick-link" data-target="Cycle time">Cycle Time</div>
-                    <div class="quick-link" data-target="PPF">PPF</div>
-                    <div class="quick-link" data-target="OWT">OWT</div>
-                    <div class="quick-link" data-target="Avg. relay position occupancy">Relay Occupancy</div>
-                    <div class="quick-link" data-target="Network latency">Network Latency</div>
-                    <div class="quick-link" data-target="Put / back to store">Put/Back to Store</div>
-                </div>
-            </div>
-
             <div class="sidebar-section">
                 <div class="sidebar-title">Selected Node</div>
                 <div class="details-panel" id="details-panel">
@@ -1280,6 +1204,13 @@
                         </svg>
                         <p>Click on a node to view details</p>
                     </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Key Metrics at Risk</div>
+                <div id="critical-paths-list" class="critical-paths-container">
+                    <!-- Critical paths will be populated by JS -->
                 </div>
             </div>
         </aside>

@@ -253,136 +253,154 @@
             font-weight: 500;
         }
 
-        /* Health Summary Dashboard */
-        .health-summary-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
+        /* Health Overview Section */
+        .health-overview-section {
+            background: #f8f9fa;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .health-status-row {
+            display: flex;
+            gap: 4px;
             margin-bottom: 16px;
         }
 
-        .health-summary-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            padding: 12px 10px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .health-status-item {
+            flex: 1;
+            text-align: center;
+            padding: 10px 6px;
+            border-radius: 6px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
         }
 
-        .health-summary-card.critical {
-            background: rgba(184, 84, 80, 0.15);
-            border-color: rgba(184, 84, 80, 0.3);
+        .health-status-item.critical {
+            border-left: 3px solid var(--health-critical);
         }
 
-        .health-summary-card.warning {
-            background: rgba(196, 130, 74, 0.15);
-            border-color: rgba(196, 130, 74, 0.3);
+        .health-status-item.warning {
+            border-left: 3px solid var(--health-warning);
         }
 
-        .health-summary-card.healthy {
-            background: rgba(72, 169, 153, 0.15);
-            border-color: rgba(72, 169, 153, 0.3);
+        .health-status-item.healthy {
+            border-left: 3px solid var(--health-healthy);
         }
 
-        .health-summary-icon {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
+        .health-status-count {
+            display: block;
+            font-size: 22px;
             font-weight: 700;
-        }
-
-        .health-summary-card.critical .health-summary-icon {
-            background: var(--health-critical);
-            color: white;
-        }
-
-        .health-summary-card.warning .health-summary-icon {
-            background: var(--health-warning);
-            color: white;
-        }
-
-        .health-summary-card.healthy .health-summary-icon {
-            background: var(--health-healthy);
-            color: white;
-        }
-
-        .health-summary-value {
-            font-size: 20px;
-            font-weight: 700;
-            color: white;
+            font-family: 'JetBrains Mono', monospace;
             line-height: 1;
+            margin-bottom: 2px;
         }
 
-        .health-summary-label {
+        .health-status-item.critical .health-status-count { color: var(--health-critical); }
+        .health-status-item.warning .health-status-count { color: var(--health-warning); }
+        .health-status-item.healthy .health-status-count { color: var(--health-healthy); }
+
+        .health-status-label {
             font-size: 9px;
-            color: #a0aec0;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        /* Main KPI Display */
-        .main-kpi-display {
-            background: rgba(255, 255, 255, 0.03);
+        /* Main Metric Display */
+        .main-metric-display {
+            background: var(--bg-secondary);
             border-radius: 8px;
             padding: 16px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-color);
         }
 
-        .main-kpi-label {
-            font-size: 11px;
-            color: #a0aec0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .main-metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 8px;
         }
 
-        .main-kpi-value {
-            font-size: 48px;
-            font-weight: 800;
+        .main-metric-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .main-metric-status {
+            font-size: 9px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .main-metric-status.critical {
+            background: var(--health-critical-bg);
+            color: var(--health-critical);
+            border: 1px solid var(--health-critical);
+        }
+
+        .main-metric-status.warning {
+            background: var(--health-warning-bg);
+            color: var(--health-warning);
+            border: 1px solid var(--health-warning);
+        }
+
+        .main-metric-status.healthy {
+            background: var(--health-healthy-bg);
+            color: var(--health-healthy);
+            border: 1px solid var(--health-healthy);
+        }
+
+        .main-metric-value-row {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .main-metric-value {
+            font-size: 36px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
             line-height: 1;
-            margin-bottom: 4px;
+        }
+
+        .main-metric-value.critical { color: var(--health-critical); }
+        .main-metric-value.warning { color: var(--health-warning); }
+        .main-metric-value.healthy { color: var(--health-healthy); }
+
+        .main-metric-unit {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .main-metric-comparison {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 8px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .main-metric-target {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .main-metric-delta {
+            font-size: 13px;
+            font-weight: 700;
             font-family: 'JetBrains Mono', monospace;
         }
 
-        .main-kpi-value.critical { color: #e57373; }
-        .main-kpi-value.warning { color: #ffb74d; }
-        .main-kpi-value.healthy { color: #81c784; }
-
-        .main-kpi-target {
-            font-size: 11px;
-            color: #718096;
-            margin-bottom: 8px;
-        }
-
-        .main-kpi-delta {
-            font-size: 12px;
-            font-weight: 600;
-            padding: 4px 12px;
-            border-radius: 12px;
-            display: inline-block;
-        }
-
-        .main-kpi-delta.critical {
-            background: rgba(184, 84, 80, 0.2);
-            color: #e57373;
-        }
-
-        .main-kpi-delta.warning {
-            background: rgba(196, 130, 74, 0.2);
-            color: #ffb74d;
-        }
-
-        .main-kpi-delta.healthy {
-            background: rgba(72, 169, 153, 0.2);
-            color: #81c784;
-        }
+        .main-metric-delta.critical { color: var(--health-critical); }
+        .main-metric-delta.warning { color: var(--health-warning); }
+        .main-metric-delta.healthy { color: var(--health-healthy); }
 
         /* Stats */
         .stats-grid {
@@ -489,41 +507,62 @@
             cursor: grabbing;
         }
 
-        /* Tree Nodes */
+        /* Tree Nodes - Data-focused design */
         .node circle {
-            stroke-width: 2px;
+            stroke-width: 1.5px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.15s ease;
+            opacity: 0.9;
         }
 
         .node circle:hover {
-            filter: brightness(1.1);
-            stroke-width: 3px;
+            opacity: 1;
+            stroke-width: 2px;
         }
 
         .node text {
             font-family: 'Inter', sans-serif;
-            font-size: 11px;
-            fill: var(--text-primary);
             pointer-events: none;
         }
 
-        .node text.label-secondary {
-            font-size: 9px;
+        .node text.label-primary {
+            font-size: 13px;
+            font-weight: 600;
+            fill: var(--text-primary);
+        }
+
+        .node text.label-value {
+            font-size: 18px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .node text.label-unit {
+            font-size: 10px;
             fill: var(--text-muted);
+        }
+
+        .node text.label-secondary {
+            font-size: 10px;
+            fill: var(--text-muted);
+        }
+
+        .node text.expand-indicator {
+            font-size: 10px;
+            fill: white;
         }
 
         .link {
             fill: none;
-            stroke: #c4c9cf;
+            stroke: #d0d5db;
             stroke-width: 1px;
-            opacity: 0.5;
+            opacity: 0.4;
         }
 
         .link.highlighted {
             stroke: var(--accent-blue);
             stroke-width: 1.5px;
-            opacity: 0.8;
+            opacity: 0.7;
         }
 
         /* Tooltip */
@@ -838,15 +877,16 @@
         .critical-kpis-container {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            max-height: 200px;
+            gap: 6px;
+            max-height: 180px;
             overflow-y: auto;
         }
 
         .kpi-metric-card {
-            background: var(--bg-primary);
+            background: var(--bg-secondary);
             border-radius: 6px;
-            padding: 12px;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
             border-left: 3px solid var(--health-critical);
             display: flex;
             align-items: center;
@@ -857,6 +897,7 @@
 
         .kpi-metric-card:hover {
             background: var(--bg-tertiary);
+            border-color: var(--accent-blue);
         }
 
         .kpi-metric-card.warning {
@@ -869,26 +910,32 @@
 
         .kpi-metric-info {
             flex: 1;
+            min-width: 0;
         }
 
         .kpi-metric-name {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
             color: var(--text-primary);
             margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .kpi-metric-target {
-            font-size: 9px;
+            font-size: 10px;
             color: var(--text-muted);
         }
 
         .kpi-metric-value-container {
             text-align: right;
+            flex-shrink: 0;
+            margin-left: 12px;
         }
 
         .kpi-metric-value {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
             font-family: 'JetBrains Mono', monospace;
             line-height: 1;
@@ -899,17 +946,19 @@
         .kpi-metric-value.healthy { color: var(--health-healthy); }
 
         .kpi-metric-unit {
-            font-size: 9px;
+            font-size: 10px;
             color: var(--text-muted);
         }
 
         .kpi-metric-trend {
-            font-size: 10px;
+            font-size: 11px;
+            font-weight: 600;
             margin-top: 2px;
+            font-family: 'JetBrains Mono', monospace;
         }
 
         .kpi-metric-trend.up { color: var(--health-critical); }
-        .kpi-metric-trend.down { color: var(--health-healthy); }
+        .kpi-metric-trend.down { color: var(--health-critical); }
         .kpi-metric-trend.stable { color: var(--text-muted); }
 
         /* Critical Paths Styling */
@@ -1195,36 +1244,34 @@
     <div class="main-container">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <div class="sidebar-section" style="background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%); padding: 20px; margin: -1px;">
-                <div class="sidebar-title" style="color: #a0aec0;">System Health Overview</div>
-                <div class="health-summary-grid">
-                    <div class="health-summary-card critical">
-                        <div class="health-summary-icon">⚠</div>
-                        <div class="health-summary-content">
-                            <div class="health-summary-value" id="summary-critical">4</div>
-                            <div class="health-summary-label">Critical</div>
-                        </div>
+            <div class="sidebar-section health-overview-section">
+                <div class="health-status-row">
+                    <div class="health-status-item critical">
+                        <span class="health-status-count" id="summary-critical">11</span>
+                        <span class="health-status-label">Critical</span>
                     </div>
-                    <div class="health-summary-card warning">
-                        <div class="health-summary-icon">!</div>
-                        <div class="health-summary-content">
-                            <div class="health-summary-value" id="summary-warning">3</div>
-                            <div class="health-summary-label">Warning</div>
-                        </div>
+                    <div class="health-status-item warning">
+                        <span class="health-status-count" id="summary-warning">6</span>
+                        <span class="health-status-label">Warning</span>
                     </div>
-                    <div class="health-summary-card healthy">
-                        <div class="health-summary-icon">✓</div>
-                        <div class="health-summary-content">
-                            <div class="health-summary-value" id="summary-healthy">12</div>
-                            <div class="health-summary-label">Healthy</div>
-                        </div>
+                    <div class="health-status-item healthy">
+                        <span class="health-status-count" id="summary-healthy">8</span>
+                        <span class="health-status-label">Healthy</span>
                     </div>
                 </div>
-                <div class="main-kpi-display">
-                    <div class="main-kpi-label">Current UPH</div>
-                    <div class="main-kpi-value critical" id="main-uph-value">85</div>
-                    <div class="main-kpi-target">Target: 150 units/hr</div>
-                    <div class="main-kpi-delta critical">▼ 43% below target</div>
+                <div class="main-metric-display">
+                    <div class="main-metric-header">
+                        <span class="main-metric-name">UPH</span>
+                        <span class="main-metric-status critical">CRITICAL</span>
+                    </div>
+                    <div class="main-metric-value-row">
+                        <span class="main-metric-value critical">85</span>
+                        <span class="main-metric-unit">units/hr</span>
+                    </div>
+                    <div class="main-metric-comparison">
+                        <span class="main-metric-target">Target: 150</span>
+                        <span class="main-metric-delta critical">-43%</span>
+                    </div>
                 </div>
             </div>
 

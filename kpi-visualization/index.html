@@ -253,6 +253,137 @@
             font-weight: 500;
         }
 
+        /* Health Summary Dashboard */
+        .health-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .health-summary-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 12px 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .health-summary-card.critical {
+            background: rgba(184, 84, 80, 0.15);
+            border-color: rgba(184, 84, 80, 0.3);
+        }
+
+        .health-summary-card.warning {
+            background: rgba(196, 130, 74, 0.15);
+            border-color: rgba(196, 130, 74, 0.3);
+        }
+
+        .health-summary-card.healthy {
+            background: rgba(72, 169, 153, 0.15);
+            border-color: rgba(72, 169, 153, 0.3);
+        }
+
+        .health-summary-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .health-summary-card.critical .health-summary-icon {
+            background: var(--health-critical);
+            color: white;
+        }
+
+        .health-summary-card.warning .health-summary-icon {
+            background: var(--health-warning);
+            color: white;
+        }
+
+        .health-summary-card.healthy .health-summary-icon {
+            background: var(--health-healthy);
+            color: white;
+        }
+
+        .health-summary-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            line-height: 1;
+        }
+
+        .health-summary-label {
+            font-size: 9px;
+            color: #a0aec0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Main KPI Display */
+        .main-kpi-display {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .main-kpi-label {
+            font-size: 11px;
+            color: #a0aec0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .main-kpi-value {
+            font-size: 48px;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .main-kpi-value.critical { color: #e57373; }
+        .main-kpi-value.warning { color: #ffb74d; }
+        .main-kpi-value.healthy { color: #81c784; }
+
+        .main-kpi-target {
+            font-size: 11px;
+            color: #718096;
+            margin-bottom: 8px;
+        }
+
+        .main-kpi-delta {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+
+        .main-kpi-delta.critical {
+            background: rgba(184, 84, 80, 0.2);
+            color: #e57373;
+        }
+
+        .main-kpi-delta.warning {
+            background: rgba(196, 130, 74, 0.2);
+            color: #ffb74d;
+        }
+
+        .main-kpi-delta.healthy {
+            background: rgba(72, 169, 153, 0.2);
+            color: #81c784;
+        }
+
         /* Stats */
         .stats-grid {
             display: grid;
@@ -703,9 +834,87 @@
             color: white;
         }
 
+        /* Critical KPIs Display */
+        .critical-kpis-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .kpi-metric-card {
+            background: var(--bg-primary);
+            border-radius: 6px;
+            padding: 12px;
+            border-left: 3px solid var(--health-critical);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .kpi-metric-card:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .kpi-metric-card.warning {
+            border-left-color: var(--health-warning);
+        }
+
+        .kpi-metric-card.healthy {
+            border-left-color: var(--health-healthy);
+        }
+
+        .kpi-metric-info {
+            flex: 1;
+        }
+
+        .kpi-metric-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        .kpi-metric-target {
+            font-size: 9px;
+            color: var(--text-muted);
+        }
+
+        .kpi-metric-value-container {
+            text-align: right;
+        }
+
+        .kpi-metric-value {
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1;
+        }
+
+        .kpi-metric-value.critical { color: var(--health-critical); }
+        .kpi-metric-value.warning { color: var(--health-warning); }
+        .kpi-metric-value.healthy { color: var(--health-healthy); }
+
+        .kpi-metric-unit {
+            font-size: 9px;
+            color: var(--text-muted);
+        }
+
+        .kpi-metric-trend {
+            font-size: 10px;
+            margin-top: 2px;
+        }
+
+        .kpi-metric-trend.up { color: var(--health-critical); }
+        .kpi-metric-trend.down { color: var(--health-healthy); }
+        .kpi-metric-trend.stable { color: var(--text-muted); }
+
         /* Critical Paths Styling */
         .critical-paths-container {
-            max-height: 280px;
+            max-height: 220px;
             overflow-y: auto;
         }
 
@@ -986,25 +1195,36 @@
     <div class="main-container">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <div class="sidebar-section">
-                <div class="sidebar-title">UPH Architecture Summary</div>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value" id="stat-kpis">85+</div>
-                        <div class="stat-label">Total Nodes</div>
+            <div class="sidebar-section" style="background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%); padding: 20px; margin: -1px;">
+                <div class="sidebar-title" style="color: #a0aec0;">System Health Overview</div>
+                <div class="health-summary-grid">
+                    <div class="health-summary-card critical">
+                        <div class="health-summary-icon">⚠</div>
+                        <div class="health-summary-content">
+                            <div class="health-summary-value" id="summary-critical">4</div>
+                            <div class="health-summary-label">Critical</div>
+                        </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="stat-tables">8</div>
-                        <div class="stat-label">DB Tables</div>
+                    <div class="health-summary-card warning">
+                        <div class="health-summary-icon">!</div>
+                        <div class="health-summary-content">
+                            <div class="health-summary-value" id="summary-warning">3</div>
+                            <div class="health-summary-label">Warning</div>
+                        </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="stat-db-found">28</div>
-                        <div class="stat-label">DB Mapped</div>
+                    <div class="health-summary-card healthy">
+                        <div class="health-summary-icon">✓</div>
+                        <div class="health-summary-content">
+                            <div class="health-summary-value" id="summary-healthy">12</div>
+                            <div class="health-summary-label">Healthy</div>
+                        </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="stat-db-not-found">33+</div>
-                        <div class="stat-label">DB Not Found</div>
-                    </div>
+                </div>
+                <div class="main-kpi-display">
+                    <div class="main-kpi-label">Current UPH</div>
+                    <div class="main-kpi-value critical" id="main-uph-value">85</div>
+                    <div class="main-kpi-target">Target: 150 units/hr</div>
+                    <div class="main-kpi-delta critical">▼ 43% below target</div>
                 </div>
             </div>
 
@@ -1030,23 +1250,9 @@
             </div>
 
             <div class="sidebar-section">
-                <div class="sidebar-title">Health Status</div>
-                <div id="health-status-legend">
-                    <div class="legend-item health-filter" data-health="critical" style="cursor: pointer;">
-                        <div class="legend-dot" style="background: var(--health-critical);"></div>
-                        <span class="legend-label">Critical</span>
-                        <span class="legend-count" id="count-critical" style="background: var(--health-critical); color: white;">0</span>
-                    </div>
-                    <div class="legend-item health-filter" data-health="warning" style="cursor: pointer;">
-                        <div class="legend-dot" style="background: var(--health-warning);"></div>
-                        <span class="legend-label">Warning</span>
-                        <span class="legend-count" id="count-warning" style="background: var(--health-warning); color: white;">0</span>
-                    </div>
-                    <div class="legend-item health-filter" data-health="healthy" style="cursor: pointer;">
-                        <div class="legend-dot" style="background: var(--health-healthy);"></div>
-                        <span class="legend-label">Healthy</span>
-                        <span class="legend-count" id="count-healthy" style="background: var(--health-healthy); color: white;">0</span>
-                    </div>
+                <div class="sidebar-title">Key Metrics At Risk</div>
+                <div id="critical-kpis-list" class="critical-kpis-container">
+                    <!-- Will be populated by JS -->
                 </div>
             </div>
 

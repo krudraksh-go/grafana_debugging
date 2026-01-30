@@ -111,9 +111,90 @@
     
     function updateHealthCounts() {
         const summary = getHealthSummary();
-        document.getElementById('count-critical').textContent = summary.critical;
-        document.getElementById('count-warning').textContent = summary.warning;
-        document.getElementById('count-healthy').textContent = summary.healthy;
+        
+        // Update summary cards
+        const criticalEl = document.getElementById('summary-critical');
+        const warningEl = document.getElementById('summary-warning');
+        const healthyEl = document.getElementById('summary-healthy');
+        
+        if (criticalEl) criticalEl.textContent = summary.critical;
+        if (warningEl) warningEl.textContent = summary.warning;
+        if (healthyEl) healthyEl.textContent = summary.healthy;
+        
+        // Populate critical KPIs list
+        populateCriticalKPIs();
+    }
+    
+    function populateCriticalKPIs() {
+        const container = document.getElementById('critical-kpis-list');
+        if (!container) return;
+        
+        // Get all KPIs with health data, sorted by severity
+        const kpisWithHealth = [];
+        for (const [name, health] of Object.entries(MOCK_HEALTH_DATA)) {
+            const threshold = HEALTH_THRESHOLDS[name];
+            if (threshold) {
+                kpisWithHealth.push({ name, health, threshold });
+            }
+        }
+        
+        // Sort: critical first, then warning, then by value deviation from target
+        kpisWithHealth.sort((a, b) => {
+            const severityOrder = { critical: 0, warning: 1, healthy: 2 };
+            const aSeverity = severityOrder[a.health.status] || 3;
+            const bSeverity = severityOrder[b.health.status] || 3;
+            return aSeverity - bSeverity;
+        });
+        
+        // Show top 6 most critical
+        const topKPIs = kpisWithHealth.slice(0, 6);
+        
+        let html = '';
+        topKPIs.forEach(kpi => {
+            const trendIcon = kpi.health.trend === 'up' ? '↑' : (kpi.health.trend === 'down' ? '↓' : '→');
+            const trendClass = kpi.health.trend;
+            const deviation = kpi.threshold.target ? 
+                Math.round(((kpi.health.value - kpi.threshold.target) / kpi.threshold.target) * 100) : 0;
+            const deviationText = deviation > 0 ? `+${deviation}%` : `${deviation}%`;
+            
+            html += `
+                <div class="kpi-metric-card ${kpi.health.status}" data-kpi-name="${kpi.name}">
+                    <div class="kpi-metric-info">
+                        <div class="kpi-metric-name">${kpi.name}</div>
+                        <div class="kpi-metric-target">Target: ${kpi.threshold.target} ${kpi.threshold.unit}</div>
+                    </div>
+                    <div class="kpi-metric-value-container">
+                        <div class="kpi-metric-value ${kpi.health.status}">${kpi.health.value}</div>
+                        <div class="kpi-metric-unit">${kpi.threshold.unit}</div>
+                        <div class="kpi-metric-trend ${trendClass}">${trendIcon} ${deviationText}</div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+        
+        // Add click handlers
+        container.querySelectorAll('.kpi-metric-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const name = card.dataset.kpiName;
+                const node = findNodeByName(name);
+                if (node) {
+                    // Expand path to this node
+                    let current = node;
+                    while (current) {
+                        if (current._children) {
+                            current.children = current._children;
+                            current._children = null;
+                        }
+                        current = current.parent;
+                    }
+                    update(root);
+                    showDetails(node);
+                    setTimeout(() => panToNode(node), 300);
+                }
+            });
+        });
     }
     
     function populateCriticalPaths() {
@@ -456,7 +537,40 @@
             .attr('fill', '#2d3748')
             .attr('font-size', d => d.depth === 0 ? 14 : (d.depth === 1 ? 12 : 11))
             .attr('font-weight', d => d.depth <= 1 ? 600 : 500)
-            .text(d => truncateLabel(d.data.name, 32));
+            .text(d => truncateLabel(d.data.name, 28));
+
+        // Add value display for nodes with health data
+        nodeEnter.filter(d => getNodeHealth(d.data.name))
+            .append('text')
+            .attr('class', 'label-value')
+            .attr('dy', '0.35em')
+            .attr('x', d => -getNodeRadius(d.data.type) - 8)
+            .attr('text-anchor', 'end')
+            .attr('fill', d => {
+                const health = getNodeHealth(d.data.name);
+                return health ? HEALTH_COLORS[health.status] : '#718096';
+            })
+            .attr('font-size', 14)
+            .attr('font-weight', 700)
+            .attr('font-family', "'JetBrains Mono', monospace")
+            .text(d => {
+                const health = getNodeHealth(d.data.name);
+                return health ? health.value : '';
+            });
+
+        // Add unit display for nodes with health data
+        nodeEnter.filter(d => getNodeHealth(d.data.name) && getNodeThreshold(d.data.name))
+            .append('text')
+            .attr('class', 'label-unit')
+            .attr('dy', '1.5em')
+            .attr('x', d => -getNodeRadius(d.data.type) - 8)
+            .attr('text-anchor', 'end')
+            .attr('fill', '#718096')
+            .attr('font-size', 8)
+            .text(d => {
+                const threshold = getNodeThreshold(d.data.name);
+                return threshold ? threshold.unit : '';
+            });
 
         // Add type badge
         nodeEnter.append('text')
@@ -466,7 +580,7 @@
             .attr('text-anchor', 'start')
             .attr('fill', '#718096')
             .attr('font-size', 9)
-            .text(d => getTypeLabel(d.data));
+            .text(d => getSecondaryLabel(d.data));
 
         // Add verification badge
         nodeEnter.filter(d => d.data.verified === true)
@@ -660,6 +774,25 @@
         if (!text) return '';
         return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     }
+    
+    function getSecondaryLabel(data) {
+        const health = getNodeHealth(data.name);
+        if (health) {
+            const threshold = getNodeThreshold(data.name);
+            if (threshold && threshold.target) {
+                const deviation = Math.round(((health.value - threshold.target) / threshold.target) * 100);
+                const trendIcon = health.trend === 'up' ? '↑' : (health.trend === 'down' ? '↓' : '→');
+                const sign = deviation > 0 ? '+' : '';
+                return `${trendIcon} ${sign}${deviation}% from target`;
+            }
+            return health.status.toUpperCase();
+        }
+        
+        if (data.dbNotFound) return '⚠ DB NOT FOUND';
+        if (data.database) return data.database;
+        if (data.formula) return '📐 Formula';
+        return NODE_TYPES[data.type]?.label || '';
+    }
 
     function isNodeVisible(d) {
         if (searchTerm && !matchesSearch(d)) return false;
@@ -746,31 +879,41 @@
             const trendClass = health.trend === 'up' ? 'trend-up' : (health.trend === 'down' ? 'trend-down' : 'trend-stable');
             const unit = threshold ? threshold.unit : '';
             const target = threshold ? threshold.target : null;
+            const deviation = target ? Math.round(((health.value - target) / target) * 100) : 0;
+            const deviationSign = deviation > 0 ? '+' : '';
+            const statusBg = health.status === 'critical' ? '#2d1f1f' : (health.status === 'warning' ? '#2d261f' : '#1f2d29');
             
             detailsHTML += `
-                <div class="health-details ${health.status}">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Current Value</span>
+                <div style="background: ${statusBg}; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0;">Current Value</span>
                         <span class="health-badge ${health.status}">${health.status.toUpperCase()}</span>
                     </div>
-                    <div style="display: flex; align-items: baseline; gap: 8px; margin-top: 8px;">
-                        <span class="health-value ${health.status}" style="font-size: 28px;">${health.value}</span>
-                        <span style="color: var(--text-muted); font-size: 14px;">${unit}</span>
-                        <span class="${trendClass}" style="font-size: 16px; margin-left: auto;">${trendIcon}</span>
+                    <div style="text-align: center;">
+                        <div style="font-size: 42px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: ${HEALTH_COLORS[health.status]}; line-height: 1;">
+                            ${health.value}
+                        </div>
+                        <div style="font-size: 12px; color: #718096; margin-top: 4px;">${unit}</div>
                     </div>
                     ${target !== null ? `
-                        <div style="margin-top: 12px;">
-                            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
-                                <span>Target: ${target} ${unit}</span>
-                                <span>${Math.round((health.value / target) * 100)}%</span>
+                        <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 11px; color: #718096;">Target: ${target} ${unit}</span>
+                                <span style="font-size: 13px; font-weight: 700; color: ${HEALTH_COLORS[health.status]};">${deviationSign}${deviation}%</span>
                             </div>
-                            <div class="health-meter">
-                                <div class="health-meter-fill ${health.status}" style="width: ${Math.min(100, (health.value / target) * 100)}%;"></div>
+                            <div style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
+                                <div style="height: 100%; width: ${Math.min(100, Math.max(0, (health.value / target) * 100))}%; background: ${HEALTH_COLORS[health.status]}; border-radius: 4px; transition: width 0.5s;"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 9px; color: #4a5568;">
+                                <span>0</span>
+                                <span>${target}</span>
+                                <span>${Math.round(target * 1.5)}</span>
                             </div>
                         </div>
                     ` : ''}
-                    <div style="font-size: 10px; color: var(--text-muted); margin-top: 8px;">
-                        Updated: ${health.lastUpdated}
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05);">
+                        <span style="font-size: 10px; color: #4a5568;">Trend: <span class="${trendClass}" style="font-weight: 600;">${trendIcon} ${health.trend}</span></span>
+                        <span style="font-size: 9px; color: #4a5568;">Updated ${health.lastUpdated}</span>
                     </div>
                 </div>
             `;

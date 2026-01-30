@@ -1,0 +1,70 @@
+# Virtual environment
+venv/
+.venv/
+env/
+.env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Compressed files (data)
+*.gz
+
+# Node modules (if any)
+node_modules/
+
+# Exclude gm_data_flow folder (contains sensitive files)
+gm_data_flow/
+
+# Secrets and credentials
+**/conf_files/
+**/service_account*.json
+*creds*.json
+*credentials*.json
+**/Tabcmd/
+**/Historical/
+
+# Files with embedded secrets
+src/push_pick_data_into_kafka.py
+src/send_consolidate_report.py
+
+# Large CSV files
+*.csv

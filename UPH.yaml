@@ -1,0 +1,190 @@
+# UPH
+
+## Picks per tote
+
+### Orderlines per tote
+
+### Quantity per orderline
+
+## TPH all PPS
+
+### Operator pull TPH
+
+- OWT per unit
+  
+- PPF
+  
+- # of logged in PPS
+  
+### VTM TPH all VTMs
+
+- Effective VTMs
+  
+    - Breakup #1
+      
+        - # of working VTMs
+          
+            - Work created
+              
+                - Distribution of tasks
+                  
+                - Created task count
+                  
+            - Work assigned
+              
+                - Blocked due to relay position unavailablity
+                  
+                - Bot error
+                  
+        - # of healthy VTMs (non-error)
+          
+    - Breakup #2
+      
+        - Effective VTMs / PPS (VTM TOR)
+          
+            - Ideal VTM TOR = (cycle time math with OWT)
+              
+                - OWT
+                  
+                - Cycle time
+                  
+            - L1 VTM TOR
+              
+        - Number of PPS
+          
+- TPH / VTM
+  
+    - Breakup #1
+      
+        - Cycle time
+          
+            - Horizontal movement
+              
+                - VTM nav factor
+                  
+                - Distance
+                  
+                    - % aisle changes
+                      
+            - Vertical movement
+              
+                - Mean vertical rack level traversed
+                  
+                    - % telescopic movement
+                      
+            - Fetch / drop
+              
+                - % n-deep digging
+                  
+    - Breakup #2
+      
+        - Storable to relay TPH
+          
+        - Relay to storable TPH
+          
+### Avg. relay position occupancy
+
+- Avg relay position occupancy
+  
+    - Has tasks & towards PPS
+      
+    - Doesn't have any task and eligible for back to store
+      <!-- ::xmind-pos:{"x":1008,"y":1260} -->
+      
+- Variance of relay position occupancy
+  
+    - Work created variance
+      
+### HTM TPH all HTMs
+
+- Effective HTMs
+  
+    - Breakup #1
+      
+        - # of working HTMs
+          
+            - Work created
+              
+                - Count of  "Has tasks & towards PPS" totes on relay
+                  
+                    - Blocked due to relay position unavailablity because of back to store
+                      
+                - Distribution of "Has tasks & towards PPS" totes on relay
+                  
+            - Work assigned
+              
+                - Blocked due to bin promotion
+                  
+                - Bot error
+                  
+        - # of health HTMs (non-error)
+          
+    - Breakup #2
+      
+        - Effective HTMs/ PPS (HTM TOR)
+          
+            - Ideal HTM TOR = (cycle time math with OWT)
+              
+                - OWT
+                  
+                - Cycle time
+                  
+            - L1 HTM TOR
+              
+        - Number of PPS
+          
+- TPH / HTM
+  
+    - Cycle time
+      
+        - Breakup #1
+          
+            - Nav factor
+              
+                - Breakup #1
+                  
+                    - Nav factor on highways
+                      
+                    - Nav factor on racking
+                      
+                    - ....
+                      
+            - Dual cycle distance
+              
+        - Breakup #2
+          
+            - Current location to source
+              
+            - Pick from relay
+              
+            - Towards PPS
+              
+            - waiting in queue
+              
+            - Picking
+              
+            - PPS to PPS
+              
+                - Hopping %
+                  
+            - Back to store
+              
+            - Drop on relay
+              
+
+
+## Technical metrics
+<!-- ::xmind-pos:{"x":2383,"y":684} -->
+
+### Network latency
+
+- GMC to VDA
+  
+- VDA to firmware
+  
+- Firmware to VDA
+  
+- VDA to GMC
+  
+## Put / back to store inputs
+<!-- ::xmind-pos:{"x":2321,"y":-171} -->

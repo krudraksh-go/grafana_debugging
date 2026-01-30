@@ -1,0 +1,145 @@
+## -----------------------------------------------------------------------------
+## Import deps
+## -----------------------------------------------------------------------------
+
+import airflow
+from airflow.models.dag import DAG
+from airflow.operators.python_operator import PythonOperator
+from airflow.exceptions import AirflowTaskTimeout
+from datetime import timedelta, datetime, timezone
+import pandas as pd
+from utils.CommonFunction import InfluxData, Write_InfluxData, CommonFunction
+from config import (
+    rp_seven_days
+)
+## -----------------------------------------------------------------------------
+## DAG defination
+## -----------------------------------------------------------------------------
+
+import os
+
+Butler_ip = os.environ.get('MNESIA_IP', 'localhost')
+influx_ip = os.environ.get('INFLUX_HOSTNAME', '10.11.4.23')
+influx_port = os.environ.get('INFLUX_PORT', '8086')
+write_influx_ip = os.environ.get('INFLUX_HOSTNAME', '10.11.4.23')
+db_name = os.environ.get('Out_db_name', 'airflow')
+
+
+## -----------------------------------------------------------------------------
+## python callable definations
+## -----------------------------------------------------------------------------
+
+class custom_charger_events:
+
+    def custom_charger_events_final(self, tenant_info, **kwargs):
+        self.tenant_info = tenant_info['tenant_info']
+        self.site = self.tenant_info['Name']
+        self.client = InfluxData(host=self.tenant_info["write_influx_ip"], port=self.tenant_info["write_influx_port"],
+                                 db=self.tenant_info["alteryx_out_db_name"])
+        self.read_client = InfluxData(host=self.tenant_info["influx_ip"], port=self.tenant_info["influx_port"],
+                                      db="GreyOrange")
+
+        isvalid = self.client.is_influx_reachable(host=self.tenant_info["influx_ip"],
+                                                  port=self.tenant_info["influx_port"],
+                                                  dag_name=os.path.basename(__file__),
+                                                  site_name=self.tenant_info['Name'])
+        if not isvalid:
+            raise ValueError('InfluxDB not connected')
+
+        check_start_date = self.client.get_start_date(f"{rp_seven_days}.custom_charger_events", self.tenant_info)
+        check_end_date = datetime.now(timezone.utc)
+        check_start_date = pd.to_datetime(check_start_date) + timedelta(minutes=1)  # corner case
+        check_start_date = pd.to_datetime(check_start_date).strftime("%Y-%m-%d %H:%M:%S")
+        check_end_date = pd.to_datetime(check_end_date).strftime("%Y-%m-%d %H:%M:%S")
+
+        q = f"select *  from charger_events where time>'{check_start_date}' and time<='{check_end_date}' and value>0 limit 1"
+        df = pd.DataFrame(self.read_client.query(q).get_points())
+        if df.empty:
+            self.end_date = datetime.now(timezone.utc)
+            self.custom_charger_events_final1(self.end_date, **kwargs)
+        else:
+            try:
+                daterange = self.client.get_datetime_interval3(f"{rp_seven_days}.custom_charger_events", '1h', self.tenant_info)
+                for i in daterange.index:
+                    self.end_date = daterange['end_date'][i]
+                    self.custom_charger_events_final1(self.end_date, **kwargs)
+            except AirflowTaskTimeout as timeout_exception:
+                raise timeout_exception
+            except Exception as e:
+                print(f"error:{e}")
+                raise e
+
+    def custom_charger_events_final1(self, end_date, **kwargs):
+        self.utilfunction = CommonFunction()
+        self.start_date = self.client.get_start_date(f"{rp_seven_days}.custom_charger_events", self.tenant_info)
+        self.end_date = end_date
+        self.end_date = self.end_date.replace(second=0)
+        self.CommonFunction = CommonFunction()
+        print(f"Start date: {self.start_date}, End date: {self.end_date}")
+
+        self.end_date = self.end_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+        q = f"select * from charger_events where time>'{self.start_date}' and time <= '{self.end_date}' and value>0 order by time"
+        df = pd.DataFrame(self.read_client.query(q).get_points())
+        if df.empty:
+            filter = {"site": self.tenant_info['Name'], "table": f"{rp_seven_days}.custom_charger_events"}
+            new_last_run = {"last_run": self.end_date}
+            self.utilfunction.update_dag_last_run(filter, new_last_run)
+            return None
+        df = df.fillna('')
+        df.time = pd.to_datetime(df.time)
+        df = df.set_index('time')
+        for col in df.columns:
+            df[col] = df[col].astype(str,errors='ignore')
+        self.write_client = Write_InfluxData(host=self.tenant_info["write_influx_ip"],
+                                                port=self.tenant_info["write_influx_port"])
+        self.write_client.writepoints(df, "custom_charger_events", db_name=self.tenant_info["alteryx_out_db_name"],
+                                        tag_columns=['charger_id_tag','butler_id'],
+                                        dag_name=os.path.basename(__file__), site_name=self.tenant_info['Name'], retention_policy=rp_seven_days)
+        print("inserted")
+        return None
+
+
+with DAG(
+        'Custom_charger_events',
+        default_args=CommonFunction().get_default_args_for_dag(),
+        description='calculation of custom charger events',
+        schedule_interval='19 * * * *',
+        max_active_runs=1,
+        max_active_tasks=16,
+        concurrency=16,
+        catchup=False,
+        dagrun_timeout=timedelta(seconds=1200),
+) as dag:
+    import csv
+    import os
+    import functools
+
+    if os.environ.get('MULTI_TENANT_DAGS', 'false') == 'true':
+        csvReader = CommonFunction().get_all_site_data_config()
+        for tenant in csvReader:
+            if tenant['Active'] == "Y" and tenant['Custom_charger_events'] == "Y":
+                try:
+                    final_task = PythonOperator(
+                        task_id='custom_charger_events_final_{}'.format(tenant['Name']),
+                        provide_context=True,
+                        python_callable=functools.partial(custom_charger_events().custom_charger_events_final,
+                                                          tenant_info={'tenant_info': tenant}),
+                        execution_timeout=timedelta(seconds=3600),
+                    )
+                except AirflowTaskTimeout as timeout_exception:
+                    raise timeout_exception
+                except Exception as e:
+                    print(f"error:{e}")
+                    raise e
+
+    else:
+        tenant = CommonFunction().get_tenant_info()
+        final_task = PythonOperator(
+            task_id='custom_charger_events_final',
+            provide_context=True,
+            python_callable=functools.partial(custom_charger_events().custom_charger_events_final,
+                                              tenant_info={'tenant_info': tenant}),
+            execution_timeout=timedelta(seconds=3600),
+        )
+
+

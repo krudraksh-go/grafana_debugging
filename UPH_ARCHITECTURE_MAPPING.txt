@@ -1,0 +1,109 @@
+UPH ARCHITECTURE - COMPLETE MAPPING
+===================================
+Source: UPH - Xmind AI.pdf
+
+ENTRIES WITH DB MAPPING FOUND
+=============================
+Orderlines per tote          → airflow.orderline_transactions (src/orderline_transactions.py)
+Quantity per orderline       → airflow.system_order_stats (src/system_order_stats_only_for_cloud_sites.py)
+TPH all PPS                  → GreyOrange.ppstask_events
+OWT per unit                 → airflow.flow_transactions_sec_alteryx (src/Flow_transactions_sec_alteryx.py)
+PPF                          → airflow.picks_per_rack_face (src/pick_per_rack_face.py)
+# of logged in PPS           → GreyOrange.pps_data
+VTM TPH all VTMs             → Alteryx.relay_bot_journey (src/relay_bot_journey.py)
+# of working VTMs            → GreyOrange.ranger_events
+Blocked due to relay pos.    → Alteryx.relay_utilization (src/relay_utilization.py)
+OWT                          → airflow.flow_transactions_sec_alteryx
+Cycle time                   → Alteryx.relay_bot_journey
+Number of PPS                → GreyOrange.pps_data
+Horizontal movement          → GreyOrange.task_cycle_times
+VTM nav factor               → Alteryx.task_cycle_times_summary (src/consolidated_task_cycle_times.py)
+% aisle changes              → Alteryx.vtm_aisle_change (src/vtm_aisle_change.py)
+Fetch / drop                 → Alteryx.relay_bot_journey
+% n-deep digging             → Alteryx.relay_journey_raw (current_location_depth)
+Pick / Back to store         → Alteryx.relay_bot_journey
+Storable to relay TPH        → Alteryx.relay_bot_journey (storable_to_relay_point)
+Relay to storable TPH        → Alteryx.relay_bot_journey (relay_point_to_station)
+Avg. relay position occ.     → Alteryx.relay_utilization
+HTM TPH all HTMs             → Alteryx.relay_bot_journey (src/relay_bot_journey.py)
+# of working HTMs            → GreyOrange.ranger_events (ranger_type=htm)
+Nav factor                   → Alteryx.task_cycle_times_summary
+Back to store / MVTS         → Alteryx.relay_bot_journey
+Pick from relay              → Alteryx.relay_bot_journey (tote_loaded)
+Towards PPS                  → Alteryx.relay_bot_journey (reached_pps)
+Picking                      → Alteryx.relay_bot_journey (going_pps_exit)
+Pick                         → Alteryx.relay_bot_journey
+Back to store                → Alteryx.relay_bot_journey (station_to_relay_point)
+Drop on relay                → Alteryx.relay_bot_journey (tote_unloaded)
+Put / back to store          → airflow.put_uph (src/put_uph.py)
+Put / back to store inputs   → GreyOrange.item_put
+
+ENTRIES WITH DB NOT FOUND
+=========================
+UPH (top-level)
+Picks per tote
+Ideal
+System push
+MVTS
+Operator pull TPH
+Effective VTMs
+MVTS / GMC
+GMC (VTM)
+Pick (GMC)
+Work created
+Distribution of tasks
+Created task count
+Work assigned
+Bot error (VTM)
+# of healthy VTMs (non-error)
+Pick / MVTS
+Effective VTMs / PPS (VTM TOR)
+Ideal VTM TOR
+L1 VTM TOR
+TPH / VTM
+Navigation
+Distance
+Vertical movement
+Mean vertical rack level traversed
+% telescopic movement
+MVTS / Pick
+Has tasks & towards PPS
+Doesn't have any task and eligible for back to store
+Variance of relay position occupancy
+Work created variance
+Effective HTMs
+MVTS / GMC (HTM)
+GMC (HTM)
+Work created (HTM)
+Count of 'Has tasks & towards PPS' totes on relay
+Blocked due to relay pos unavail because of back to store
+Distribution of 'Has tasks & towards PPS' totes on relay
+Work assigned (HTM)
+Blocked due to bin promotion
+Bot error (HTM)
+# of healthy HTMs (non-error)
+Pick / MVTS (HTM)
+Effective HTMs / PPS (HTM TOR)
+Ideal HTM TOR
+L1 HTM TOR
+TPH / HTM
+Navigation (HTM)
+Nav factor on highways
+Nav factor on racking
+Dual cycle distance
+Current location to source
+waiting in queue
+PPS to PPS
+Hopping %
+Technical metrics
+Network latency
+GMC to VDA
+VDA to firmware
+Firmware to VDA
+VDA to GMC
+
+SUMMARY
+=======
+Total PDF entries: ~90
+Mapped to DB: 32
+Not found in DB: ~58 (mostly GMC internal metrics, network latency)

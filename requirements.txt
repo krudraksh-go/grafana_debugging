@@ -1,19 +1,9 @@
 # KPI Architecture Visualization Dependencies
-# The visualization server uses Python standard library only,
-# but including common dependencies for the full project.
+# The visualization server uses Python standard library only.
+# No external dependencies required to run the web UI.
 
-# Core data processing
-influxdb==5.2.3
-pandasql==0.7.3
-gspread==5.11.3
-Jinja2==3.1.2
-openpyxl==3.1.2
-pandas==1.3.5
-jira==3.2.0
-google-cloud-storage
-confluent-kafka==2.4.0
-kafka-python==2.0.2
-azure-eventhub
-pymongo==4.7.3
-joblib
-scikit-learn
+# Optional: Uncomment below if you need the full data processing capabilities
+# influxdb==5.2.3
+# pandas==2.0.3
+# Jinja2==3.1.2
+# openpyxl==3.1.2

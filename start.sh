@@ -38,16 +38,14 @@ echo ""
 echo "[2/3] Activating virtual environment..."
 source "$VENV_DIR/bin/activate"
 
-# Install dependencies
+# Install dependencies (if any)
 echo ""
-echo "[3/3] Installing dependencies..."
-pip install --upgrade pip -q
-if [ -f "requirements.txt" ]; then
-    pip install -r requirements.txt -q
-    echo "      Dependencies installed from requirements.txt"
-else
-    echo "      No requirements.txt found (using standard library only)"
-fi
+echo "[3/3] Checking dependencies..."
+pip install --upgrade pip -q 2>/dev/null || true
+
+# The visualization uses Python standard library only
+# No external packages required
+echo "      Using Python standard library (no external dependencies needed)"
 
 # Start the server
 echo ""
